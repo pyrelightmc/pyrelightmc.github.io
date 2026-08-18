@@ -1,0 +1,127 @@
+---
+title: "Messages & languages"
+description: "17 languages included. Every line players see is editable."
+icon: Languages
+---
+
+Every message rLogin sends is in a language file, and every one of them can be
+changed. Nothing is hardcoded.
+
+## Picking a language
+
+```yaml
+general:
+  language: es
+```
+
+The files live in `plugins/rLogin/messages/`, one per language:
+
+| | | | |
+|---|---|---|---|
+| `en` English | `es` Español | `pt_BR` Português (BR) | `de` Deutsch |
+| `fr` Français | `it` Italiano | `nl` Nederlands | `pl` Polski |
+| `tr` Türkçe | `ru` Русский | `uk` Українська | `zh_CN` 简体中文 |
+| `ja` 日本語 | `ko` 한국어 | `ar` العربية | `vi` Tiếng Việt |
+| `id` Bahasa Indonesia | | | |
+
+<Callout type="info">
+  The language is server-wide: every player sees the same one. `/rlogin lang`
+  exists only to remind you which setting to change.
+</Callout>
+
+## Adding a language
+
+Copy any `lang_<code>.yml`, translate the values, save it in the same folder,
+and name it in `general.language`. No code change, no restart of anything but
+rLogin — `/rlogin reload` picks it up.
+
+<Callout type="info">
+  Translations are welcome as pull requests on
+  [GitHub](https://github.com/pyrelightmc/rlogin). If you add one, please keep
+  the key list identical to `lang_en.yml`.
+</Callout>
+
+## Editing messages
+
+The files are plain YAML, grouped by area:
+
+```yaml
+prefix: "&#d4d9d8[&#e39fffrLogin&#d4d9d8] &r"
+
+login:
+  usage: "{prefix}&#e39fff/login <password> [2fa-code]"
+  success: "{prefix}&#91f251Welcome back, &#fd8ddb{player}&#91f251."
+```
+
+| Group | Covers |
+|---|---|
+| `general` | Shared errors, like "only a player can use this command". |
+| `login` · `register` · `logout` · `changepassword` | The player commands. |
+| `premium` | Auto-login announcements and `/premium`. |
+| `limbo` | The freeze reminder, blocked actions, the login timeout. |
+| `security` | Lockouts and rejected passwords. |
+| `totp` | Everything two-factor. |
+| `admin` | Output of `/rlogin` administration. |
+| `spawn` | Spawn point management. |
+| `setup` | Startup and connection-refused screens. |
+
+## Colours
+
+Three formats work, and you can mix them freely in the same string:
+
+<Tabs items={["Hex", "MiniMessage", "Legacy"]}>
+  <Tab>
+    ```yaml
+    success: "&#91f251Welcome back."
+    ```
+    Also accepts `§x§R§R§G§G§B§B` and a bare `#RRGGBB`. This is what the bundled
+    files use.
+  </Tab>
+  <Tab>
+    ```yaml
+    success: "<green>Welcome <bold>back</bold>."
+    ```
+    Full Kyori MiniMessage, including `<#e39fff>`, gradients and click events.
+  </Tab>
+  <Tab>
+    ```yaml
+    success: "&aWelcome back."
+    ```
+    The classic `&a` / `§a` codes, plus `&l`, `&n` and `&r`.
+  </Tab>
+</Tabs>
+
+The palette the bundled files follow, if you want to stay consistent:
+
+| Role | Colour |
+|---|---|
+| Commands | `#e39fff` |
+| Values and placeholders | `#fd8ddb` |
+| Errors | `#fd5e5e` |
+| Success | `#91f251` |
+| Warnings | `#fdba5e` |
+| Time | `#5e9dfd` |
+| Neutral text | `#d4d9d8` |
+
+## Placeholders
+
+`{prefix}` works in every message. The rest depend on the message and are
+listed in the comment at the top of each file:
+
+| Placeholder | Where |
+|---|---|
+| `{player}` | Messages about a specific player. |
+| `{seconds}` | Lockouts and timeouts. |
+| `{attempts}` | Remaining login attempts. |
+| `{min}` | Minimum password length. |
+
+Use `\n` for a line break — useful in the kick screens, which are the only
+multi-line messages.
+
+## Applying changes
+
+```bash
+/rlogin reload
+```
+
+Reloads `config.yml` and the language files without restarting the server.

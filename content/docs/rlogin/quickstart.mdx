@@ -1,0 +1,100 @@
+---
+title: "Quickstart"
+description: "What actually happens the first time each kind of player connects."
+icon: Rocket
+---
+
+rLogin needs no configuration to work. This page is here so you know what to
+expect — and so you can tell whether it is behaving correctly.
+
+## A premium player connects
+
+They see the vanilla **"Encrypting…"** screen for a moment, then land in the
+world with a message:
+
+> Premium account detected — you were logged in automatically.
+
+No commands, no password, nothing to remember. Behind that moment, rLogin:
+
+1. Held their login packet and asked Mojang whether the name is a real account.
+2. Sent an encryption request, which their client answered by contacting
+   Mojang on its own — the standard exchange every online-mode server does.
+3. Confirmed with Mojang's `hasJoined` that this client really owns the account.
+4. Handed the server the **real UUID and signed skin** that came back.
+
+<Callout type="success">
+  Turn on `general.debug` in `config.yml` to see each of those decisions
+  explained in the console, one line per connection.
+</Callout>
+
+## A non-premium player connects
+
+They arrive frozen where they spawned, and are told to register:
+
+> Register with /register &lt;password&gt; &lt;repeat password&gt;
+
+Until they do, they cannot move, chat, break blocks, take damage or run any
+command other than the ones in `limbo.allowed-commands`. After `/register`,
+every later visit is just `/login <password>`.
+
+<Callout type="info">
+  If they take longer than `limbo.login-timeout-seconds` (60 by default), they
+  are disconnected. A connection parked forever at the login prompt still holds
+  a player slot.
+</Callout>
+
+## They come back ten minutes later
+
+They are not asked again. A player who logged in and reconnects from the same
+address within `session.remember-me-minutes` gets their session restored.
+
+Read [Sessions](/docs/rlogin/features/sessions) before raising that window — it
+trusts an *address*, and addresses are shared.
+
+## Someone takes a premium name
+
+By default they can't. `premium.protect-premium-names` refuses `/register` on
+any name that belongs to a real Minecraft account, so its owner never loses the
+ability to auto-login with it.
+
+If you turn that off, rLogin still keeps the two apart:
+[the real owner and the impostor end up as separate
+accounts](/docs/rlogin/features/cracked-auth#when-a-name-is-already-taken), and
+`/rlogin changeuuid` can move data between them.
+
+## Try it yourself
+
+<Tabs items={["Check your own status", "See an account (admin)", "Reload config and messages"]}>
+<Tab>
+
+```bash
+/premium
+```
+
+</Tab>
+<Tab>
+
+```bash
+/rlogin info Notch
+```
+
+</Tab>
+<Tab>
+
+```bash
+/rlogin reload
+```
+
+</Tab>
+</Tabs>
+
+## Next
+
+<Cards>
+  <Card title="Premium auto-login" icon={<Icon name="CircleCheck" className="size-4" />} href="/docs/rlogin/features/premium-auth">
+    How verification works, and which UUID players end up with.
+  </Card>
+  <Card title="All commands" icon={<Icon name="Terminal" className="size-4" />} href="/docs/rlogin/reference/commands">
+    Player and admin commands in one table.
+  </Card>
+</Cards>

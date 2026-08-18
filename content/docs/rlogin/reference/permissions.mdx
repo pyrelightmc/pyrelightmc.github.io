@@ -1,0 +1,57 @@
+---
+title: "Permissions"
+description: "Two nodes. That's the whole list."
+icon: ShieldUser
+---
+
+rLogin has exactly two permission nodes. Logging in is not a privilege, so the
+player commands are not gated behind anything.
+
+| Node | Default | Grants |
+|---|---|---|
+| `rlogin.admin` | `op` | Every `/rlogin` administration and spawn subcommand. |
+| `rlogin.bypass` | `false` | Skips the login requirement entirely. |
+
+## rlogin.admin
+
+Covers `reload`, `info`, `unregister`, `forcelogin`, `changeuuid`, `migrate`,
+`lang`, and all four `spawn` subcommands.
+
+<Callout type="warn">
+  `forcelogin` logs a player in **without their password**, and `unregister`
+  deletes an account outright. Grant this to staff you would trust with
+  `op`, because it is functionally close to it.
+</Callout>
+
+## rlogin.bypass
+
+A player with this node is never asked to log in and is never frozen.
+
+It exists for **NPCs, Citizens entities and test bots** — things that occupy a
+player slot but have nobody to type a password. It is `false` by default and
+should stay that way for humans.
+
+<Callout type="warn">
+  Granting `rlogin.bypass` to a real player means anyone who connects with that
+  name is let straight in. On a cracked server, that is anyone at all.
+</Callout>
+
+```yaml
+# LuckPerms example: an NPC group that skips authentication
+/lp group npc permission set rlogin.bypass true
+```
+
+## What is not a permission
+
+<Accordions>
+  <Accordion title="Player commands">
+    `/login`, `/register`, `/changepassword`, `/logout`, `/2fa` and `/premium`
+    are available to everyone. Gating them would lock players out of the only
+    commands that can let them in.
+  </Accordion>
+  <Accordion title="Premium auto-login">
+    Not a permission — it is the result of a Mojang verification. There is no
+    node that makes someone premium, because a node cannot prove ownership of an
+    account.
+  </Accordion>
+</Accordions>

@@ -1,0 +1,124 @@
+---
+title: "Developer API"
+description: "React to rLogin from your own plugin."
+icon: Code
+---
+
+## The problem this solves
+
+On a server running rLogin, `PlayerJoinEvent` fires while the player is still
+**frozen**. They cannot move, cannot open an inventory, and cannot use
+anything you hand them. Give a kit there and it lands on someone who is not
+really in the game yet.
+
+`RLoginAuthenticateEvent` fires at the moment they can.
+
+```java
+@EventHandler
+public void onAuthenticate(RLoginAuthenticateEvent event) {
+    Player player = event.player();
+    if (event.isFirstServerOfSession()) {
+        player.sendMessage("Welcome back!");
+    }
+}
+```
+
+## Events
+
+<Accordions>
+  <Accordion title="RLoginAuthenticateEvent">
+    Fired once a player is authenticated and free to play, whatever got them
+    there — a password, a premium handshake, a restored session, a recovery
+    code, or an administrator.
+
+    | Method | |
+    |---|---|
+    | `player()` | The player. |
+    | `reason()` | Which of the several ways in was used. |
+    | `isFirstServerOfSession()` | `false` when they switched to this server from another backend. |
+
+    <Callout type="warn">
+      On a proxy network this fires on **every** backend the player lands on.
+      Check `isFirstServerOfSession()` before anything they should see once, or
+      your welcome message greets them again on every hop.
+    </Callout>
+  </Accordion>
+
+  <Accordion title="RLoginRegisterEvent">
+    Fired when a player creates an account with `/register`, once, on the
+    server where they typed it.
+
+    Premium players never fire it — they are let in without ever registering —
+    so read it as "new password account", not "new player".
+  </Accordion>
+</Accordions>
+
+Neither is cancellable, deliberately. Both report something that has already
+happened; an event that looked cancellable but left the player authenticated
+would be worse than one that never offered. To refuse a player, use the
+permission system or kick them from the event.
+
+Both are always fired on the player's own thread, so a listener may touch the
+world — on Folia as well as Paper.
+
+## Depending on rLogin
+
+Through [JitPack](https://jitpack.io), which builds from the release tag.
+
+<Tabs items={["build.gradle.kts", "pom.xml"]}>
+<Tab>
+
+```kotlin
+repositories {
+    maven("https://jitpack.io")
+}
+
+dependencies {
+    compileOnly("com.github.pyrelightmc.rlogin:rlogin-paper:v1.1.2")
+}
+```
+
+</Tab>
+<Tab>
+
+```xml
+<repository>
+    <id>jitpack.io</id>
+    <url>https://jitpack.io</url>
+</repository>
+
+<dependency>
+    <groupId>com.github.pyrelightmc.rlogin</groupId>
+    <artifactId>rlogin-paper</artifactId>
+    <version>v1.1.2</version>
+    <scope>provided</scope>
+</dependency>
+```
+
+</Tab>
+</Tabs>
+
+Then declare rLogin in your `plugin.yml` so it loads first:
+
+```yaml
+depend: [rLogin]      # or softdepend, if your plugin works without it
+```
+
+<Callout type="info">
+  `rlogin-api` is published separately and carries the platform-neutral types
+  (`RLoginAccount`, `AuthReason`, `Storage`). Depend on that one if you are
+  writing something that has no business touching Bukkit — a custom storage
+  backend, for instance.
+</Callout>
+
+## Stability
+
+`rlogin-api` is what the version number protects: changes there are treated as
+breaking someone else's build. The events in `rlogin-paper` are equally part
+of the public surface — everything else in that module is internal and may be
+rearranged without warning.
+
+<Card title="Something missing?" icon={<DiscordIcon className="size-4" />} href="https://discord.gg/5tuSrNRk3a">
+  If you need a hook that isn't here, say so — the surface is deliberately
+  small, not finished.
+</Card>

@@ -1,0 +1,16 @@
+{
+  "title": "rLogin",
+  "description": "Premium auto-login and password authentication",
+  "icon": "DoorOpen",
+  "root": true,
+  "defaultOpen": true,
+  "pages": [
+    "index",
+    "installation",
+    "quickstart",
+    "configuration",
+    "features",
+    "reference",
+    "help"
+  ]
+}

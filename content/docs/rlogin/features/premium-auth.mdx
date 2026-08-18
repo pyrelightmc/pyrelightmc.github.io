@@ -1,0 +1,163 @@
+---
+title: "Premium auto-login"
+description: "How a premium account is verified, and which UUID it ends up with."
+icon: CircleCheck
+---
+
+A premium player connects, sees the vanilla "Encrypting…" screen for a moment,
+and lands in the world already logged in. No command, no password.
+
+## How it is verified
+
+Which mechanism does the verifying depends on your setup — rLogin detects that
+at startup and reports it in the console.
+
+<Tabs items={["Standalone", "Behind a proxy", "online-mode: true"]}>
+  <Tab>
+    On a single `online-mode: false` server, rLogin does it itself:
+
+    <Steps>
+      <Step>
+
+### Hold the login
+
+    The `LOGIN_START` packet is intercepted and held before the server
+    processes it.
+  </Step>
+      <Step>
+
+### Ask Mojang about the name
+
+    Is this a real premium account at all? If not, the exact same packet is
+    re-injected and the login continues as if nothing happened. Cracked
+    players see zero difference.
+  </Step>
+      <Step>
+
+### Run the encryption handshake
+
+    rLogin sends an encryption request. The client contacts Mojang on its
+    own and answers — this is the vanilla client's standard behaviour for
+    this exchange, not something rLogin induces.
+  </Step>
+      <Step>
+
+### Confirm with hasJoined
+
+    Mojang confirms that **this client** owns the account, not merely that
+    the name exists. Only now is the player considered premium.
+  </Step>
+      <Step>
+
+### Apply the real identity
+
+    The UUID and signed skin Mojang returned are handed to the server, the
+    same way a proxy would forward them.
+  </Step>
+    </Steps>
+
+    This is the setup that requires
+    [PacketEvents](/docs/rlogin/installation#packetevents).
+  </Tab>
+  <Tab>
+    Velocity already verified the account before the backend saw the
+    connection, and forwarded the real profile with it.
+
+    rLogin recognises this without any cross-process syncing: it compares the
+    UUID against the one the server itself would have generated for that name
+    offline. If they differ, somebody already did the verifying.
+  </Tab>
+  <Tab>
+    The server or proxy did it. Every connection is premium by definition and
+    nobody is ever asked for a password.
+
+    This only runs under `auth-mode: online`. On `auto` or `offline` rLogin
+    refuses to start with online-mode on, because it would be quietly turning
+    away the players those modes exist for — see [what online-mode has to
+    be](/docs/rlogin/installation#what-online-mode-has-to-be).
+  </Tab>
+</Tabs>
+
+<Callout type="warn">
+  A plain "is this name premium?" API check is **not** verification — anyone can
+  type a premium name. rLogin never treats a name lookup as proof on its own;
+  it is only ever used to decide whether the handshake is worth starting.
+</Callout>
+
+## uuid-type
+
+Which UUID players end up with. Only applies to a standalone server — behind
+Velocity the identity is decided before rLogin ever sees the connection.
+
+```yaml
+premium:
+  uuid-type: real
+```
+
+<Accordions>
+  <Accordion title="real — the default">
+    Verified premium players join with their **real Mojang UUID**; everyone else
+    keeps the offline one.
+
+    This is the only mode where "premium Steve" and "cracked Steve" are separate
+    accounts, and where your other plugins — permissions, economy, bans — see
+    the same UUID they would on any online-mode server. It is also what makes
+    switching to `online-mode: true` later a non-event.
+  </Accordion>
+  <Accordion title="cracked — keep an existing offline world">
+    Everyone gets the offline UUID derived from their name, premium included.
+    Auto-login still works exactly the same.
+
+    Use this when you already have an offline-mode world and player database
+    that you want to keep working untouched. `offline` is accepted as a synonym.
+  </Accordion>
+  <Accordion title="random — one identity across both">
+    A random UUID generated the first time each name connects, and reused from
+    then on, for premium and cracked alike.
+
+    Lets a player move between a premium and a cracked launcher without losing
+    their data. The trade-off: a non-offline UUID no longer proves anything, so
+    only the cryptographic handshake counts as verification under this mode.
+  </Accordion>
+</Accordions>
+
+<Callout type="warn">
+  Changing `uuid-type` on a server that already has players **changes who they
+  are** — they will look like brand-new players to every other plugin. Use
+  [`/rlogin changeuuid`](/docs/rlogin/reference/commands#administration) to carry an
+  account across if you do.
+</Callout>
+
+## Bedrock players
+
+Bedrock players arriving through Geyser/Floodgate were already verified by
+Microsoft, so they are treated as premium and never asked to log in.
+
+```yaml
+bedrock:
+  floodgate-auto-login: true
+  prefix: "."
+```
+
+`prefix` must match `username-prefix` in Floodgate's own config.
+
+## When Mojang is down
+
+`premium.api-failure-policy` decides. `fail-open` (the default) treats the
+player as cracked and asks for `/login` — the server stays up. `fail-closed`
+refuses the connection until Mojang is reachable again.
+
+Results are cached for `premium.cache-ttl-minutes` (60 by default), so a brief
+outage often goes unnoticed for players who have connected recently.
+
+## Turning it off
+
+```yaml
+premium:
+  auto-login: false
+```
+
+Or, more thoroughly,
+[`auth-mode: offline`](/docs/rlogin/configuration/config-file#auth-mode) — which also
+removes the PacketEvents requirement, because nothing is checked against Mojang
+at all.

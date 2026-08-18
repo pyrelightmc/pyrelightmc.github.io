@@ -1,0 +1,92 @@
+---
+title: "Introduction"
+description: "Premium players join without typing anything. Everyone else logs in with a password."
+icon: DoorOpen
+---
+
+Most authentication plugins make you pick a side. Run `online-mode: true` and
+every player without a Minecraft account is turned away. Run offline and you
+have to ask *everybody* for a password — including the people who already own
+the account they are connecting with.
+
+rLogin does neither. It verifies premium accounts against Mojang itself and
+lets them straight in, while everyone else registers with a password as usual.
+
+<Cards>
+  <Card title="Premium players" icon={<Icon name="CircleCheck" className="size-4" />}>
+    Verified against Mojang and let in with **no password, no commands** —
+    carrying their real UUID and skin.
+  </Card>
+  <Card title="Everyone else" icon={<Icon name="Key" className="size-4" />}>
+    `/register` once, `/login` after that. Frozen in place until they do.
+  </Card>
+</Cards>
+
+## Why the UUID matters
+
+Plenty of plugins can wave a premium player through. Far fewer give them the
+**UUID Mojang actually issued them**.
+
+On an offline server the UUID is normally derived from the name, so "Notch" is
+whoever types `Notch` — and if you later switch the server to online mode,
+every permission, balance and ban is attached to the wrong identity. rLogin
+hands the connection the genuine profile it got back from Mojang, exactly as a
+proxy would, so your other plugins see the same UUID they would on any
+online-mode server.
+
+That is [`uuid-type: real`](/docs/rlogin/features/premium-auth#uuid-type), and it is
+the default.
+
+<Callout type="info">
+  You can turn it off. Servers with an existing offline-mode world often prefer
+  `uuid-type: cracked`, which keeps everyone on the UUID they already have
+  while still skipping the password for premium players.
+</Callout>
+
+## Where it runs
+
+<Cards>
+  <Card title="Standalone" icon={<Icon name="Server" className="size-4" />}>
+    One Paper server, `online-mode: false`. rLogin does the Mojang verification
+    itself — this is the setup that needs
+    [PacketEvents](/docs/rlogin/installation#packetevents).
+  </Card>
+  <Card title="Behind a proxy" icon={<Icon name="Network" className="size-4" />}>
+    Velocity verifies, the backend trusts it. No PacketEvents needed —
+    the same jar runs on the proxy.
+  </Card>
+  <Card title="Folia" icon={<Icon name="Layers" className="size-4" />}>
+    Supported from day one. Every scheduled task uses the regional schedulers,
+    never Bukkit's global one.
+  </Card>
+</Cards>
+
+## What else is in the box
+
+<Cards>
+  <Card title="17 languages" icon={<Icon name="Languages" className="size-4" />} href="/docs/rlogin/configuration/messages">
+    Every message players see, translated and editable.
+  </Card>
+  <Card title="Two-factor auth" icon={<Icon name="ShieldHalf" className="size-4" />} href="/docs/rlogin/features/security#two-factor-authentication">
+    TOTP through any authenticator app. Players opt in themselves.
+  </Card>
+  <Card title="Remember me" icon={<Icon name="History" className="size-4" />} href="/docs/rlogin/features/sessions">
+    A quick reconnect from the same address doesn't ask again.
+  </Card>
+  <Card title="Brute-force protection" icon={<Icon name="Lock" className="size-4" />} href="/docs/rlogin/features/security#brute-force-protection">
+    Escalating lockouts by address — never by account.
+  </Card>
+  <Card title="Spawn points" icon={<Icon name="MapPin" className="size-4" />} href="/docs/rlogin/features/spawns">
+    Separate spawns for joining, first join, logging in and registering.
+  </Card>
+  <Card title="Import your accounts" icon={<Icon name="ArrowRightLeft" className="size-4" />} href="/docs/rlogin/features/migrating">
+    From AuthMe, nLogin, JPremium or LoginSecurity — hashes included.
+  </Card>
+</Cards>
+
+## Get going
+
+<Card title="Installation" icon={<Icon name="Download" className="size-4" />} href="/docs/rlogin/installation">
+  One jar, one conditional dependency, no configuration. Download it from
+  Hangar, Modrinth, or GitHub Releases.
+</Card>

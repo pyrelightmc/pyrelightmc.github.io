@@ -1,0 +1,214 @@
+---
+title: "Installation"
+description: "One jar, one conditional dependency, and nothing to configure."
+icon: Download
+---
+
+## Requirements
+
+| | |
+|---|---|
+| **Server** | Paper, Purpur, Folia or Velocity |
+| **Minecraft** | 1.21 or newer |
+| **Java** | 21 or newer |
+| **Velocity** | 3.x and 4.x both work |
+
+<Accordions><Accordion title="Why the jar is built against the Velocity 3 API">
+  It runs on Velocity 4 regardless: every API rLogin touches — `PreLoginEvent`
+  and its `forceOnlineMode`/`forceOfflineMode` results, `ServerPostConnectEvent`
+  and `getPreviousServer`, plugin messaging, `isOnlineMode` — is unchanged
+  between the two, and Velocity 4 still reads the same `velocity-plugin.json`
+  descriptor.
+
+  Building *against* the version 4 API is a different matter: its class files
+  target **Java 25**, and rLogin ships as one jar shared with the Paper half,
+  where Java 21 is still what most servers run. Compiling against it would drop
+  every Java 21 server to gain nothing, since the calls are identical either
+  way.
+</Accordion></Accordions>
+
+## Download
+
+<Cards>
+  <Card title="Hangar" icon={<Icon name="Package" className="size-4" />} href="https://hangar.papermc.io/Pyrelight/rlg">
+    PaperMC's own platform. **Available now** — start here.
+  </Card>
+  <Card title="Modrinth" icon={<Icon name="Box" className="size-4" />} href="https://modrinth.com/plugin/rlg">
+    Coming soon: the project is still awaiting review.
+  </Card>
+  <Card title="CurseForge" icon={<Icon name="Anvil" className="size-4" />} href="https://www.curseforge.com/minecraft/bukkit-plugins/rlg">
+    Coming soon: also awaiting review.
+  </Card>
+  <Card title="GitHub Releases" icon={<Icon name="Github" className="size-4" />} href="https://github.com/pyrelightmc/rlogin/releases">
+    Every version, with its changelog and source.
+  </Card>
+</Cards>
+
+All four carry the same `rLogin-<version>.jar`.
+
+## What online-mode has to be
+
+The single setting people get wrong. rLogin refuses every connection when these
+disagree, and says so in the console — a silent half-working server is worse
+than one that won't start.
+
+| Your `auth-mode` | Standalone `server.properties` | Velocity `velocity.toml` | PacketEvents |
+|---|---|---|---|
+| `auto` (default) | `online-mode=false` | `online-mode = false` | Standalone only |
+| `offline` | `online-mode=false` | `online-mode = false` | Never |
+| `online` | `online-mode=true` | `online-mode = true` | Never |
+
+<Callout type="info">
+  The logic is one sentence: **with online-mode on, the server or proxy turns
+  away every player without a Minecraft account before rLogin is consulted at
+  all.** On a network built for those players, that is the whole audience gone,
+  so `auto` and `offline` require it off. `auth-mode: online` is the one case
+  where turning them away is the point, and there online-mode does the job for
+  free.
+</Callout>
+
+## One jar, both platforms
+
+There is a single download: **`rLogin-<version>.jar`**. The same file goes into
+a Paper or Folia server's `plugins/` folder *and* into a Velocity proxy's — you
+do not pick a build, and there is no separate proxy download.
+
+<Accordions><Accordion title="How one jar runs on two platforms">
+  Paper and Velocity find their entry point in completely different ways that do
+  not collide. Paper reads `plugin.yml` at the jar root and reflectively loads
+  the class named there. Velocity reads `velocity-plugin.json`, emitted at
+  compile time from the annotated class, and loads only what that descriptor
+  names.
+
+  Neither platform's API is bundled, so each side only ever touches its own half
+  — the Velocity classes are simply never loaded on Paper, and vice versa.
+</Accordion></Accordions>
+
+## Standalone server
+
+One Paper server, no proxy, `online-mode: false` in `server.properties`.
+
+<Steps>
+  <Step>
+
+### Install PacketEvents
+
+Download [PacketEvents](https://modrinth.com/plugin/packetevents) and put it
+in `plugins/`. See [why](#packetevents) below.
+  </Step>
+  <Step>
+
+### Install rLogin
+
+Put `rLogin-<version>.jar` in `plugins/` as well.
+  </Step>
+  <Step>
+
+### Start the server
+
+That's it. Premium verification turns itself on because it detected the one
+setup that needs it.
+
+```
+[rLogin] rLogin ready. Folia: false | Database: sqlite | Setup: standalone-offline | Auth mode: auto | Premium auto-login: on | Floodgate: not installed
+```
+  </Step>
+</Steps>
+
+## Behind a Velocity proxy
+
+<Steps>
+  <Step>
+
+### Install rLogin on every backend
+
+The same jar in each backend's `plugins/`. Each keeps `online-mode: false`
+and has Velocity Modern Forwarding configured as usual.
+  </Step>
+  <Step>
+
+### Install the same jar on the proxy
+
+Drop it into Velocity's `plugins/`, and set `online-mode = false` in
+`velocity.toml` — rLogin decides per player up there, which it cannot do if
+Velocity has already turned the non-premium ones away.
+  </Step>
+  <Step>
+
+### Point the backends at one database
+
+Only needed if you have **more than one** backend — otherwise an account
+created on one is unknown on the others. See
+[Database](/docs/rlogin/configuration/database).
+  </Step>
+  <Step>
+
+### Name your auth server
+
+In the proxy's `plugins/rlogin/config.yml`, set `login-servers.servers` to
+the server that should ask players to log in. See
+[Proxy setup](/docs/rlogin/configuration/proxy).
+  </Step>
+</Steps>
+
+<Callout type="info">
+  PacketEvents is **not** needed here. The proxy already verified the connection
+  against Mojang before the backend ever saw it, and verifying twice would be
+  pointless.
+</Callout>
+
+<Callout type="warn">
+  Velocity is the only proxy with an rLogin plugin. A backend behind BungeeCord
+  will *detect* the forwarding and not verify twice — but nothing routes the
+  login, so players are asked again on every server switch.
+</Callout>
+
+## Premium-only server
+
+Set `auth-mode: online` in rLogin's `config.yml`, keep `online-mode` on, and
+start. Every player is premium by definition, so nobody is ever asked for a
+password — rLogin is there for the spawn points, the messages, two-factor
+authentication on top of premium, and `/rlogin` administration.
+
+<Callout type="info">
+  `auth-mode: online` is what makes online-mode the correct setting rather than
+  a contradiction. Leave it on the default `auto` and rLogin will refuse every
+  connection, because `auto` promises non-premium players a way in that
+  online-mode has already taken away.
+</Callout>
+
+## PacketEvents
+
+<Callout type="warn">
+  On a standalone `online-mode: false` server, rLogin **refuses all
+  connections** until PacketEvents is installed. This is deliberate.
+</Callout>
+
+Verifying a premium account means performing the encryption handshake the
+server itself skipped, and that has to happen at the packet level, before
+Bukkit fires a single event. PacketEvents is what makes that possible.
+
+The alternative would be to start anyway and quietly treat every premium player
+as cracked — which means their name is claimable by anyone, and the server
+silently stops doing the one thing it was installed to do. Refusing to start is
+noisy, but it is honest, and it takes a minute to fix.
+
+<Callout type="info">
+  PacketEvents is licensed GPL-3.0 and is never bundled into rLogin. It stays a
+  separate plugin that rLogin talks to at runtime.
+</Callout>
+
+You can avoid the requirement entirely with
+[`auth-mode: offline`](/docs/rlogin/configuration/config-file#auth-mode), which turns
+off Mojang verification altogether and asks everyone for a password.
+
+## Next
+
+<Cards>
+  <Card title="Quickstart" icon={<Icon name="Rocket" className="size-4" />} href="/docs/rlogin/quickstart">
+    The first five minutes, from a player's point of view.
+  </Card>
+  <Card title="config.yml" icon={<Icon name="SlidersHorizontal" className="size-4" />} href="/docs/rlogin/configuration/config-file">
+    Every setting, explained.
+  </Card>
+</Cards>

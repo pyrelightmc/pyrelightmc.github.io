@@ -1,0 +1,100 @@
+---
+title: "Spawn points"
+description: "Four moments rLogin can move a player at, each with its own spawn."
+icon: MapPin
+---
+
+rLogin can teleport a player at four distinct moments. Each is optional and
+independent — set the ones you need and ignore the rest.
+
+| Role | When it fires |
+|---|---|
+| `join` | Every join by a player who has played before. |
+| `firstjoin` | The very first time an account ever joins. |
+| `login` | Right after a successful `/login`. |
+| `register` | Right after a successful `/register`. |
+
+Any role with no spawn set does nothing at all: the player stays where they
+logged out, which is the server's own default behaviour.
+
+## Setting one
+
+Stand exactly where you want the spawn to be, then:
+
+```bash
+/rlogin spawn set <join|firstjoin|login|register>
+```
+
+**Where you are standing is the spawn** — position, world, and the direction
+you are facing. There are no coordinates to type.
+
+## Checking and removing
+
+<Tabs items={["List all four", "Go stand on one", "Clear one"]}>
+<Tab>
+
+```bash
+/rlogin spawn list
+```
+
+</Tab>
+<Tab>
+
+```bash
+/rlogin spawn teleport login
+```
+
+</Tab>
+<Tab>
+
+```bash
+/rlogin spawn remove login
+```
+
+</Tab>
+</Tabs>
+
+`teleport` (short form `tp`) is the quick way to confirm a spawn landed where
+you meant it to, before a player finds out for you.
+
+## A common setup
+
+<Steps>
+  <Step>
+
+### An arrival point for new accounts
+
+```bash
+/rlogin spawn set firstjoin
+```
+Somewhere with your rules and a sign pointing at `/register`.
+  </Step>
+  <Step>
+
+### A safe spot while they are frozen
+
+```bash
+/rlogin spawn set join
+```
+Pending players are frozen wherever they land, so make it somewhere they
+cannot be shot at.
+  </Step>
+  <Step>
+
+### Send them into the world once they are in
+
+```bash
+/rlogin spawn set login
+/rlogin spawn set register
+```
+  </Step>
+</Steps>
+
+<Callout type="warn">
+  If a spawn points at a world that is not loaded, rLogin says so and leaves the
+  player where they are rather than dropping them somewhere wrong.
+</Callout>
+
+<Callout type="info">
+  All spawn commands require `rlogin.admin`.
+</Callout>

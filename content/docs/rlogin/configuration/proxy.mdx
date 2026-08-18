@@ -1,0 +1,174 @@
+---
+title: "Proxy setup"
+description: "What rlogin-velocity does, and the four things you can tell it."
+icon: Network
+---
+
+The proxy's config is short on purpose. **rLogin is configured on the backend** —
+passwords, 2FA, sessions, spawns, languages and UUID handling all live in
+`plugins/rLogin/config.yml` there. None of it belongs on a proxy.
+
+The proxy is a connector. It does exactly two jobs:
+
+<Cards>
+  <Card title="Verifies premium accounts" icon={<Icon name="CircleCheck" className="size-4" />}>
+    Behind a proxy it is the only place that can. Always on; nothing to
+    configure.
+  </Card>
+  <Card title="Routes the login" icon={<Icon name="Signpost" className="size-4" />}>
+    Makes sure a player logs in **once**, on a server that can ask, and is never
+    asked again while switching servers.
+  </Card>
+</Cards>
+
+<Callout type="warn">
+  **No database settings here.** Accounts live on the backends. If you run more
+  than one backend, point them all at the same MySQL so an account made on one
+  is known on the others. The proxy never reads or writes it.
+</Callout>
+
+<Callout type="warn">
+  **`velocity.toml` needs `online-mode = false`** for `auth-mode: auto` or
+  `offline`. With it on, rLogin refuses every connection and prints a banner
+  explaining why. See [what online-mode has to
+  be](/docs/rlogin/installation#what-online-mode-has-to-be).
+</Callout>
+
+The file is `plugins/rlogin/config.yml` on the proxy.
+
+## auth-mode
+
+```yaml
+general:
+  auth-mode: auto
+```
+
+Who this network is for. **Must match what your backends have**, or the proxy
+and the backends disagree about who gets in.
+
+| | |
+|---|---|
+| `auto` | Premium join without typing anything, everyone else with a password. Needs `online-mode = false`. |
+| `online` | Premium only. Here `online-mode = true` is the right setup. |
+| `offline` | Passwords only, nothing checked against Mojang. Needs `online-mode = false`. |
+
+## login-servers
+
+```yaml
+login-servers:
+  servers:
+    - 'auth'
+  enforce: true
+```
+
+| Setting | Default | What it does |
+|---|---|---|
+| `servers` | `['auth']` | The servers running rLogin — the ones that can ask a player to log in. Players who have not logged in yet are sent to one of these, picked at random when there is more than one. |
+| `enforce` | `true` | Send them there even if Velocity's own `try` order chose somewhere else. |
+
+<Callout type="warn">
+  Turning `enforce` off means a player can reach a server before logging in.
+  Only do it if you route the first server yourself.
+</Callout>
+
+## after-login
+
+```yaml
+after-login:
+  action: stay
+  servers:
+    - 'lobby'
+  never-return-to: []
+```
+
+What happens once a backend reports that the player has logged in.
+
+<Tabs items={["stay", "send", "previous"]}>
+  <Tab>
+    Leave them where they are. Right for networks that log players in on the
+    lobby they were going to anyway.
+  </Tab>
+  <Tab>
+    Move them to one of `after-login.servers`, at random. Right for a dedicated
+    auth server they should not linger on.
+  </Tab>
+  <Tab>
+    Back to the server they were on last time. Falls back to `send` if that
+    server is gone or they have no history yet.
+  </Tab>
+</Tabs>
+
+`never-return-to` lists servers `previous` should never send anyone back to.
+Your login servers are already excluded; add anything else that makes no sense
+to return to, like a queue or a limbo server.
+
+## timing
+
+```yaml
+timing:
+  switch-delay: 500
+  retry-delay: 5000
+```
+
+| Setting | Default | What it does |
+|---|---|---|
+| `switch-delay` | `500` ms | Pause before moving a player between servers. A short pause avoids switching mid-handshake, which drops the player. |
+| `retry-delay` | `5000` ms | If a switch fails, wait this long and try once more. Covers a backend that was briefly starting up or full. |
+
+## A working example
+
+An auth server that players should not stay on, and two lobbies:
+
+```yaml
+login-servers:
+  servers:
+    - 'auth'
+  enforce: true
+
+after-login:
+  action: send
+  servers:
+    - 'lobby-1'
+    - 'lobby-2'
+  never-return-to:
+    - 'queue'
+
+timing:
+  switch-delay: 500
+  retry-delay: 5000
+```
+
+## Requirements on the proxy side
+
+<Steps>
+  <Step>
+
+### velocity.toml
+
+`online-mode = false`, and Modern Forwarding configured as usual.
+
+This is not a typo. rLogin verifies each connection individually up here and
+forces *that player* online or offline; with `online-mode = true` Velocity
+has already dropped everyone without an account before rLogin sees them.
+Under `auth-mode: online` the reverse applies — set it to `true` and let
+Velocity do the work.
+  </Step>
+  <Step>
+
+### Each backend
+
+`online-mode: false` in `server.properties`, with the forwarding secret in
+place. This is standard Velocity setup, not an rLogin requirement.
+  </Step>
+  <Step>
+
+### The same jar on every backend
+
+Including the auth server. The proxy has no accounts of its own.
+  </Step>
+</Steps>
+
+<Callout type="info">
+  [PacketEvents](/docs/rlogin/installation#packetevents) is **not** needed on any
+  backend in this setup. The proxy already did the verifying.
+</Callout>

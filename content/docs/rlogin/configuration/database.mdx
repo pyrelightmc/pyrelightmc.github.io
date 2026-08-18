@@ -1,0 +1,124 @@
+---
+title: "Database"
+description: "SQLite by default. MySQL when several servers must share accounts."
+icon: Database
+---
+
+## Which one you need
+
+<Cards>
+  <Card title="SQLite" icon={<Icon name="File" className="size-4" />}>
+    **One server.** Zero configuration, one file next to the config. This is the
+    default and it is the right answer for most people.
+  </Card>
+  <Card title="MySQL / MariaDB" icon={<Icon name="Server" className="size-4" />}>
+    **Several backends.** Needed so an account created on one server is known on
+    the others. Without it, players re-register on every server.
+  </Card>
+</Cards>
+
+<Callout type="info">
+  Running a proxy does **not** by itself mean you need MySQL. The proxy never
+  reads or writes the database — accounts live on the backends. One backend
+  behind a proxy is perfectly happy with SQLite.
+</Callout>
+
+## SQLite
+
+```yaml
+database:
+  type: sqlite
+  sqlite:
+    file: rlogin.db
+```
+
+The file is created inside `plugins/rLogin/`. Back it up like any other world
+data; it is the only copy of your accounts.
+
+## MySQL
+
+```yaml
+database:
+  type: mysql
+  mysql:
+    host: 127.0.0.1
+    port: 3306
+    database: rlogin
+    username: root
+    password: ""
+    use-ssl: false
+    pool-size: 10
+```
+
+| Setting | Default | Notes |
+|---|---|---|
+| `host` | `127.0.0.1` | |
+| `port` | `3306` | |
+| `database` | `rlogin` | Must exist already; rLogin creates its tables, not the schema. |
+| `username` | `root` | Give rLogin its own user with rights to just this database. |
+| `password` | `""` | |
+| `use-ssl` | `false` | Turn on if the database is not on the same machine. |
+| `pool-size` | `10` | Connections held open. 10 is plenty for a normal network. |
+
+<Steps>
+  <Step>
+
+### Create the database and a user
+
+```sql
+CREATE DATABASE rlogin CHARACTER SET utf8mb4;
+CREATE USER 'rlogin'@'%' IDENTIFIED BY 'a-long-random-password';
+GRANT ALL PRIVILEGES ON rlogin.* TO 'rlogin'@'%';
+```
+  </Step>
+  <Step>
+
+### Point every backend at it
+
+The same block, identical on each server. They share the tables; nothing
+else needs to be synchronised.
+  </Step>
+  <Step>
+
+### Restart and check the console
+
+```
+[rLogin] rLogin ready. ... | Database: mysql | ...
+```
+  </Step>
+</Steps>
+
+<Callout type="warn">
+  All backends sharing a database must also agree on
+  [`uuid-type`](/docs/rlogin/features/premium-auth#uuid-type). If one issues real
+  UUIDs and another offline ones, the same player is two different accounts
+  depending on where they land.
+</Callout>
+
+## Tables
+
+rLogin creates and migrates its own tables on startup. You never need to touch
+them, but for the curious:
+
+| Table | Holds |
+|---|---|
+| `rlogin_accounts` | One row per account: UUID, name, password hash, premium flag, TOTP secret, last IP, timestamps. |
+| `rlogin_sessions` | Active "remember me" sessions, with their expiry. |
+
+Expired sessions are purged automatically every 30 minutes.
+
+<Callout type="info">
+  Passwords are stored as **bcrypt** hashes, cost 10 by default. They are never
+  written in plain text, not to the database and not to the log — see
+  [Security](/docs/rlogin/features/security#passwords-never-reach-the-log).
+</Callout>
+
+## Moving from SQLite to MySQL
+
+There is no built-in converter. The straightforward path is to export the
+accounts table from SQLite and import it into MySQL with any standard tool —
+the schema is identical on both.
+
+<Card title="Importing from another plugin?" icon={<Icon name="ArrowRightLeft" className="size-4" />} href="/docs/rlogin/features/migrating">
+  `/rlogin migrate` reads AuthMe databases directly, hashes included.
+</Card>

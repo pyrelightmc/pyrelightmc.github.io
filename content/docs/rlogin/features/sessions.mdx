@@ -1,0 +1,62 @@
+---
+title: "Sessions"
+description: "\"Remember me\" — and an honest account of what it trusts."
+icon: History
+---
+
+A player who logged in and reconnects shortly after is not asked for their
+password again.
+
+```yaml
+session:
+  remember-me: true
+  remember-me-minutes: 30
+```
+
+## What it trusts
+
+<Callout type="warn">
+  A session is bound to an **IP address**, and addresses are shared.
+</Callout>
+
+Everyone behind the same router, campus network or mobile carrier looks
+identical to a server. And on a cracked server the UUID comes from the name —
+so a neighbour who types your name inherits your session until it expires.
+
+Thirty minutes is a window most servers can live with. Several hours is a
+different proposition, and worth thinking about before you set it.
+
+Turn it off entirely with `remember-me: false`.
+
+## What cancels a session
+
+| Event | Effect |
+|---|---|
+| `/logout` | Ends it immediately. |
+| `/changepassword` | Ends it immediately — a password change should not leave old sessions valid. |
+| The window expiring | Expired rows are purged automatically every 30 minutes. |
+| A different IP | The session simply does not match; they are asked to log in. |
+
+## Accounts with 2FA are excluded
+
+A player who set up two-factor authentication has said plainly that an address
+is not good enough for them. rLogin never applies the shortcut to those
+accounts, regardless of the setting.
+
+## Switching servers on a proxy
+
+Moving between backends within the same network never re-prompts. The proxy
+knows the player is authenticated for the duration of their connection and tells
+each backend as they arrive — this is not the same mechanism as "remember me"
+and is not affected by `remember-me-minutes`.
+
+<Callout type="info">
+  This is why rLogin also goes on the proxy. Without it each backend would
+  decide independently, and a player would be asked to log in again on every
+  hop.
+</Callout>
+
+## Premium players
+
+Never involved in any of this. They are verified on every connection, which is
+both stronger than a session and cheaper to reason about.

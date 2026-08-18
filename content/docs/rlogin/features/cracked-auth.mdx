@@ -1,0 +1,135 @@
+---
+title: "Password login"
+description: "Registering, logging in, and what happens when a premium name is already taken."
+icon: Key
+---
+
+Players without a Minecraft account register once and log in after that. While
+they are pending, they are frozen where they stand.
+
+## The freeze
+
+There is no separate limbo world to build or maintain. A pending player simply
+cannot move, chat, break blocks, drop items, take damage, or run any command
+outside `limbo.allowed-commands`.
+
+```yaml
+limbo:
+  freeze: true
+  allowed-commands:
+    - /login
+    - /l
+    - /register
+    - /reg
+    - /2fa
+  reminder-interval-seconds: 5
+  login-timeout-seconds: 60
+```
+
+They are reminded every 5 seconds, and disconnected after 60 if they never log
+in. Set `login-timeout-seconds: 0` to let them sit there indefinitely.
+
+<Callout type="idea">
+  Add your own commands to `allowed-commands` if you run something a player
+  legitimately needs before logging in — a language selector, for instance.
+</Callout>
+
+## Registering
+
+```bash
+/register <password> <repeat password>
+```
+
+The password is checked against `security.password.min-length` and
+`max-length`, hashed with bcrypt, and stored. It is never written anywhere in
+plain text — [not even to the console
+log](/docs/rlogin/features/security#passwords-never-reach-the-log).
+
+## Logging in
+
+```bash
+/login <password> [2fa-code]
+```
+
+Wrong passwords are rate-limited by address, with an escalating lockout. See
+[Security](/docs/rlogin/features/security#brute-force-protection).
+
+## Forgetting a password
+
+At registration the player is shown a set of one-time **recovery codes**. One
+of them sets a new password and clears any 2FA:
+
+```bash
+/recover <code> <new password>
+```
+
+Read [Security](/docs/rlogin/features/security#account-recovery) for what those
+codes are and are not.
+
+## Changing a password
+
+```bash
+/changepassword <current password> <new password>
+```
+
+This also cancels any active "remember me" session immediately — a password
+change should end sessions, not leave old ones valid.
+
+## When a name is already taken
+
+By default this cannot happen: `premium.protect-premium-names` refuses
+`/register` on any name belonging to a real Minecraft account.
+
+If you turn that protection off, rLogin still keeps the two apart rather than
+letting one overwrite the other:
+
+<Steps>
+  <Step>
+
+### The cracked player registers freely
+
+They get the offline UUID for that name, and a password. Nothing about their
+experience changes.
+  </Step>
+  <Step>
+
+### The real owner connects later
+
+They are verified against Mojang and arrive with their **real** UUID — a
+different account entirely. To the server they are a new player, and they
+are never asked for the impostor's password.
+  </Step>
+  <Step>
+
+### You decide what to do about it
+
+```bash
+/rlogin changeuuid <from-name|from-uuid> <to-name|to-uuid>
+```
+Moves the rLogin account onto another UUID, so the rightful owner can take
+over the login — or so a player switching launchers keeps their credentials.
+
+<Callout type="warn">
+  This moves the **password, 2FA and registration date only**. Inventory,
+  permissions and economy stay behind: they belong to the world and to other
+  plugins, and rLogin will not reach into them.
+</Callout>
+  </Step>
+</Steps>
+
+<Callout type="info">
+  This separation only exists under `uuid-type: real`. Under `cracked` both end
+  up on the same offline UUID by design, and under `random` both share whichever
+  UUID was assigned to the name first.
+</Callout>
+
+## Admin commands
+
+```bash
+/rlogin unregister <player>    # delete an account
+/rlogin forcelogin <player>    # log someone in without their password
+/rlogin info <player>          # premium status, UUID, last IP, 2FA
+```
+
+All of them need `rlogin.admin`. See
+[Commands](/docs/rlogin/reference/commands).

@@ -1,0 +1,256 @@
+---
+title: "config.yml"
+description: "Every setting in plugins/rLogin/config.yml, and when you would change it."
+icon: SlidersHorizontal
+---
+
+The defaults are the recommended setup. You can run rLogin without opening this
+file at all — premium auto-login turns itself on where it is needed, and there
+is no switch to find and forget.
+
+<Callout type="info">
+  When you update rLogin, new settings are added to your existing `config.yml`
+  automatically. Your values and your own comments are kept; only the missing
+  keys are appended. The console tells you which ones were added.
+</Callout>
+
+## general
+
+```yaml
+general:
+  auth-mode: auto
+  language: en
+  debug: false
+```
+
+### auth-mode
+
+The one decision worth making consciously. Everything else has a sensible
+default.
+
+<Tabs items={["auto", "online", "offline"]}>
+  <Tab>
+    **Both kinds of player.** Premium accounts are verified and join without
+    typing anything; everyone else registers and logs in with a password.
+
+    What most servers want, and the default.
+  </Tab>
+  <Tab>
+    **Premium accounts only.** Anyone Mojang does not vouch for is disconnected
+    at the door with an explanation, and `/register` serves no purpose.
+
+    Useful if you want online-mode behaviour but still need rLogin's spawns,
+    two-factor authentication or proxy routing. This is also the only mode that
+    permits `online-mode=true` — see [what online-mode has to
+    be](/docs/rlogin/installation#what-online-mode-has-to-be).
+  </Tab>
+  <Tab>
+    **Passwords only.** Nothing is checked against Mojang, so a premium player
+    registers like everybody else.
+
+    This is the only mode that does **not** need
+    [PacketEvents](/docs/rlogin/installation#packetevents) on a standalone server.
+  </Tab>
+</Tabs>
+
+### language and debug
+
+| Setting | Default | What it does |
+|---|---|---|
+| `language` | `en` | Any of the 17 bundled languages, or your own. See [Messages](/docs/rlogin/configuration/messages). |
+| `debug` | `false` | Prints one line per connection explaining why it was let in, asked for a password, or refused. Turn it on when something is not behaving. |
+
+## database
+
+```yaml
+database:
+  type: sqlite
+```
+
+SQLite needs no configuration and is the right choice for a single server.
+MySQL is only needed when several backends must share the same accounts.
+
+<Card title="Database setup" icon={<Icon name="Database" className="size-4" />} href="/docs/rlogin/configuration/database">
+  Connection settings, pooling, and when you actually need MySQL.
+</Card>
+
+## premium
+
+```yaml
+premium:
+  auto-login: true
+  api-timeout-ms: 3000
+  api-failure-policy: fail-open
+  cache-ttl-minutes: 60
+  protect-premium-names: true
+  uuid-type: real
+```
+
+| Setting | Default | What it does |
+|---|---|---|
+| `auto-login` | `true` | Premium accounts join without typing anything. |
+| `api-timeout-ms` | `3000` | How long to wait for Mojang on one lookup. |
+| `api-failure-policy` | `fail-open` | What to do when Mojang is slow or down. See below. |
+| `cache-ttl-minutes` | `60` | How long a name's premium/cracked status is remembered, so Mojang is not asked on every connection. |
+| `protect-premium-names` | `true` | Refuses `/register` on a name that belongs to a real premium account. |
+| `uuid-type` | `real` | Which UUID players end up with. See [Premium auth](/docs/rlogin/features/premium-auth#uuid-type). |
+
+<Accordions>
+  <Accordion title="api-failure-policy: fail-open vs fail-closed">
+    Mojang's session servers do go down. This decides what happens then.
+
+    - **`fail-open`** — treat the player as cracked and ask for `/login`. A
+      premium player who has never registered cannot get in, but the server
+      stays up and everyone else is unaffected. Recommended.
+    - **`fail-closed`** — refuse the connection until Mojang is reachable
+      again. Nobody unverified can slip through, at the cost of turning a
+      Mojang outage into your outage.
+  </Accordion>
+  <Accordion title="Why protect-premium-names is on by default">
+    Without it, the first person to type someone else's premium name owns it on
+    your server, and the real owner arrives to find their name taken. Turn it
+    off only if you deliberately want cracked players to claim premium names —
+    rLogin still keeps the two accounts separate, but the collision becomes
+    your problem to manage.
+  </Accordion>
+</Accordions>
+
+## session
+
+```yaml
+session:
+  remember-me: true
+  remember-me-minutes: 30
+```
+
+A player who already logged in and reconnects from the same IP within this
+window is not asked for their password again.
+
+<Callout type="warn">
+  This trusts an **address**, and addresses are shared. Read
+  [Sessions](/docs/rlogin/features/sessions) before raising the window.
+</Callout>
+
+## security
+
+```yaml
+security:
+  bruteforce:
+    enabled: true
+    max-attempts: 5
+    lockout-seconds: 60
+    lockout-multiplier: 2.0
+    max-lockout-seconds: 3600
+  totp:
+    enabled: true
+    issuer: rLogin
+  password:
+    min-length: 5
+    max-length: 30
+    bcrypt-cost: 10
+```
+
+| Setting | Default | What it does |
+|---|---|---|
+| `bruteforce.enabled` | `true` | Slows down password guessing. |
+| `bruteforce.max-attempts` | `5` | Wrong passwords allowed before a lockout. |
+| `bruteforce.lockout-seconds` | `60` | How long the first lockout lasts. |
+| `bruteforce.lockout-multiplier` | `2.0` | Each further failure multiplies the lockout by this. |
+| `bruteforce.max-lockout-seconds` | `3600` | Ceiling for that escalation. |
+| `registration.max-per-ip` | `3` | Accounts one address may create per window. `0` disables the cap. |
+| `registration.window-minutes` | `60` | How long that window is. |
+| `recovery.enabled` | `true` | Issue one-time recovery codes at registration. |
+| `recovery.codes` | `5` | How many to issue. |
+| `password.reject-common` | `true` | Refuse the passwords at the top of every breach list, and a password that is the player's own name. |
+| `totp.enabled` | `true` | Lets players opt into two-factor with `/2fa enable`. |
+| `totp.issuer` | `rLogin` | The name players see for this server in their authenticator app. |
+| `password.min-length` | `5` | |
+| `password.max-length` | `30` | |
+| `password.bcrypt-cost` | `10` | How slow hashing is, which is what makes stolen hashes hard to crack. Each `+1` doubles the time. |
+
+<Callout type="info">
+  Lockouts apply to the **address**, never the account. Locking accounts would
+  let anyone who knows a name keep its owner out just by failing logins on
+  purpose. See [Security](/docs/rlogin/features/security).
+</Callout>
+
+## limbo
+
+```yaml
+limbo:
+  freeze: true
+  allowed-commands:
+    - /login
+    - /l
+    - /register
+    - /reg
+    - /2fa
+  reminder-interval-seconds: 5
+  login-timeout-seconds: 60
+```
+
+Until they log in, players are frozen where they are — there is no separate
+limbo world to build or maintain — and can only run the commands listed here.
+
+| Setting | Default | What it does |
+|---|---|---|
+| `freeze` | `true` | Blocks movement, chat, interaction and damage until login. |
+| `allowed-commands` | see above | The only commands that work while pending. |
+| `reminder-interval-seconds` | `5` | How often to repeat "you need to log in". |
+| `login-timeout-seconds` | `60` | Kick a player who never logs in. `0` disables it. |
+
+<Callout type="idea">
+  `login-timeout-seconds` is not just tidiness. A connection parked at the login
+  prompt still holds a player slot, which is all it takes to fill a server
+  without owning a single account.
+</Callout>
+
+## bedrock
+
+```yaml
+bedrock:
+  floodgate-auto-login: true
+  prefix: "."
+```
+
+Bedrock players arriving through Geyser/Floodgate were already verified by
+Microsoft, so they are treated like premium and never asked to log in.
+
+<Callout type="warn">
+  `prefix` must match `username-prefix` in Floodgate's own config, or rLogin
+  will not recognise Bedrock names.
+</Callout>
+
+## update-checker
+
+```yaml
+update-checker:
+  enabled: true
+```
+
+Checks GitHub once at startup and prints a line if a newer release exists.
+Nothing is sent about your server, and nothing is downloaded.
+
+## metrics
+
+```yaml
+metrics:
+  bstats: true
+```
+
+Anonymous statistics via [bStats](https://bstats.org): server count, Minecraft
+and Java version, and which of rLogin's modes are in use. No player data, no
+IPs, no account information.
+
+## What is deliberately not configurable
+
+<Accordions><Accordion title="Password masking in logs">
+  The server writes commands to the console before any plugin can cancel them,
+  which means `/login hunter2` lands in `latest.log` in the clear. rLogin
+  installs a log filter that masks the password, and there is **no setting to
+  turn it off**.
+
+  That is on purpose. An admin who could disable it would be able to collect a
+  file of their players' passwords — and people reuse passwords across servers.
+  It is not a knob anyone should have.
+</Accordion></Accordions>

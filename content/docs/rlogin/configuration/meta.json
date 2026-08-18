@@ -1,0 +1,9 @@
+{
+  "title": "Configuration",
+  "pages": [
+    "config-file",
+    "database",
+    "proxy",
+    "messages"
+  ]
+}

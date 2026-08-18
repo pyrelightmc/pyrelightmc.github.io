@@ -1,0 +1,127 @@
+@import 'tailwindcss';
+@import 'fumadocs-ui/css/neutral.css';
+@import 'fumadocs-ui/css/preset.css';
+
+@source '../../node_modules/fumadocs-ui/dist/**/*.js';
+
+/*
+ * Pyrelight brand colors, plus a remap of Fumadocs' semantic accent tokens
+ * onto them. Fumadocs' own default --color-fd-primary/accent/ring invert
+ * between light and dark (near-black in light, near-white in dark); this
+ * keeps the brand purple constant in both instead. Everything else
+ * (background, foreground, borders, sidebar, search dialog, ...) is left
+ * to fumadocs-ui/css/neutral.css, which already handles both themes.
+ */
+@theme {
+  --color-brand: #e39fff;
+  --color-brand-light: #eebbff;
+  --color-brand-dark: #9b5de5;
+
+  --color-fd-primary: #e39fff;
+  --color-fd-primary-foreground: #ffffff;
+  --color-fd-accent: rgba(227, 159, 255, 0.12);
+  --color-fd-accent-foreground: #e39fff;
+  --color-fd-ring: #e39fff;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+::selection {
+  background-color: rgba(227, 159, 255, 0.3);
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(127, 127, 127, 0.3);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(127, 127, 127, 0.5);
+}
+
+/* Text balance for better typography */
+h1, h2, h3 {
+  text-wrap: balance;
+}
+
+p {
+  text-wrap: pretty;
+}
+
+/* Brand-tinted prose links */
+.prose a {
+  color: var(--color-brand);
+  text-decoration-color: var(--color-brand);
+}
+
+.prose a:hover {
+  color: var(--color-brand-light);
+  text-decoration-color: var(--color-brand-light);
+}
+
+/* Make header span full viewport width */
+#nd-subnav {
+  grid-column: 1 / -1 !important;
+}
+
+/* Nav title/logo hover styling */
+#nd-subnav a:has(svg),
+#nd-subnav a:has(img),
+#nd-subnav [class*="font-semibold"] {
+  border-radius: 8px;
+  padding: 6px 10px;
+  margin: -6px -10px;
+  transition: background-color 0.15s ease;
+}
+
+#nd-subnav a:has(svg):hover,
+#nd-subnav a:has(img):hover,
+#nd-subnav [class*="font-semibold"]:hover {
+  background-color: rgba(0, 0, 0, 0.06);
+}
+
+.dark #nd-subnav a:has(svg):hover,
+.dark #nd-subnav a:has(img):hover,
+.dark #nd-subnav [class*="font-semibold"]:hover {
+  background-color: rgba(255, 255, 255, 0.06);
+}
+
+/* TOC sidebar item hover styling */
+#nd-toc a,
+#nd-toc button {
+  border-radius: 6px;
+  padding: 4px 8px;
+  margin: 0 -8px;
+  transition: all 0.15s ease;
+}
+
+#nd-toc a:hover,
+#nd-toc button:hover {
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
+.dark #nd-toc a:hover,
+.dark #nd-toc button:hover {
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+/* Show GitHub info on all screen sizes */
+[class*="nd-notebook-layout"] .gap-6:has(> [class*="GithubInfo"]),
+[class*="nd-docs-layout"] .gap-6:has(> [class*="GithubInfo"]) {
+  display: flex !important;
+}
+
+[class*="GithubInfo"] {
+  display: flex !important;
+}

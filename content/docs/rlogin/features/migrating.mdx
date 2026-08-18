@@ -1,0 +1,113 @@
+---
+title: "Migrating from another plugin"
+description: "Bring existing accounts across, hashes included, without asking anyone to re-register."
+icon: ArrowRightLeft
+---
+
+```bash
+/rlogin migrate authme <path-or-jdbc-url>
+```
+
+Reads the other plugin's database directly and imports the accounts into
+rLogin's own. Players keep their passwords — there is nothing for them to do.
+
+## AuthMe
+
+<Tabs items={["SQLite", "MySQL"]}>
+  <Tab>
+    Point it at the file:
+
+    ```bash
+    /rlogin migrate authme plugins/AuthMe/authme.db
+    ```
+
+    A bare path is treated as SQLite automatically.
+  </Tab>
+  <Tab>
+    Give it a full JDBC URL:
+
+    ```bash
+    /rlogin migrate authme jdbc:mysql://127.0.0.1:3306/authme?user=root&password=secret
+    ```
+  </Tab>
+</Tabs>
+
+The importer reads `username`, `realname`, `password` and `ip` from the
+`authme` table, and derives each account's offline UUID from the name.
+
+### Which hashes carry over
+
+| AuthMe hash | Result |
+|---|---|
+| **bcrypt** (`$2a$`, `$2b$`, `$2y$`) | Works immediately. Players log in with their existing password. |
+| **AuthMe SHA-256** (`$SHA$salt$hash`) | Works immediately. rLogin verifies it and can re-hash to bcrypt on next login. |
+| Anything else (MD5, XAUTH, …) | The account is still imported, but that player must register again. |
+
+<Callout type="info">
+  Unsupported hashes are listed individually in the import log, so you know
+  exactly who to warn before you switch over.
+</Callout>
+
+<Callout type="warn">
+  Import into an **empty** rLogin database. Accounts that already exist are not
+  overwritten, so a partial import can leave you with a confusing mix.
+</Callout>
+
+## nLogin
+
+```bash
+/rlogin migrate nlogin plugins/nLogin/nlogin.db
+```
+
+nLogin records the **real Mojang UUID** for accounts it verified as premium,
+and that column is read when present — so a premium player keeps the identity
+they already had instead of arriving as a new offline account.
+
+## JPremium and LoginSecurity
+
+```bash
+/rlogin migrate jpremium plugins/LoginSecurity/LoginSecurity.db
+```
+
+Both are read by the same importer; their tables are close enough in shape.
+
+<Callout type="info">
+  Table and column names differ between versions of all three plugins, so they
+  are discovered rather than assumed. If yours is not recognised the import
+  says exactly that instead of failing with a database error — open an issue
+  with your plugin version and it can be added.
+</Callout>
+
+<Callout type="warn">
+  Only **bcrypt** hashes carry across from these two, plus AuthMe's own
+  SHA-256. Accounts on anything else are still imported, so the player keeps
+  their name and identity, but they must register again — and each one is
+  named in the import log.
+</Callout>
+
+## After importing
+
+<Steps>
+  <Step>
+
+### Check the log
+
+The console reports how many accounts were read, how many were imported, and
+which hashes could not be carried across.
+  </Step>
+  <Step>
+
+### Decide on uuid-type
+
+Imported accounts use the **offline** UUID, matching what AuthMe used. If
+you plan to run [`uuid-type: real`](/docs/rlogin/features/premium-auth#uuid-type),
+your premium players will arrive as new accounts — which is usually what you
+want, but it is better to know beforehand.
+  </Step>
+  <Step>
+
+### Remove the old plugin
+
+Two authentication plugins running at once will fight over the same events.
+  </Step>
+</Steps>

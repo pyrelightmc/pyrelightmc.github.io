@@ -1,0 +1,198 @@
+---
+title: "Troubleshooting"
+description: "Symptoms, causes, and the line in the console that tells you which."
+icon: Wrench
+---
+
+## Start here
+
+rLogin prints one line at startup that answers most questions:
+
+```
+[rLogin] rLogin ready. Server: Purpur 1.21.4 | Folia: false | Database: sqlite | Setup: standalone-offline | Auth mode: auto | Premium auto-login: on | Floodgate: not installed
+```
+
+`Server` names the fork you are actually running. Quote it in a bug report —
+Paper, Purpur and Pufferfish all behave the same for rLogin, but knowing which
+one turns a support thread into one question instead of three.
+
+`Setup` is what rLogin detected, and it decides everything else:
+
+| Value | Meaning |
+|---|---|
+| `standalone-offline` | One server, `online-mode: false`. rLogin verifies premium itself and **needs PacketEvents**. |
+| `behind-proxy` | Proxy forwarding detected, so something upstream already verified. |
+| `online-mode` | The server verifies. Nobody is asked for a password — valid only with `auth-mode: online`. |
+
+If that line disagrees with your setup, the problem is upstream of rLogin — in
+`server.properties`, `config/paper-global.yml` or `spigot.yml`.
+
+<Callout type="idea">
+  Set `general.debug: true` and reconnect. You get one line per connection
+  explaining exactly why it was let in, asked for a password, or refused.
+</Callout>
+
+---
+
+## Nobody can connect: "Server misconfigured"
+
+Players see a kick screen telling them to install PacketEvents.
+
+**Cause.** Standalone `online-mode: false` without
+[PacketEvents](/docs/rlogin/installation#packetevents). rLogin refuses every
+connection rather than silently downgrading every premium player to cracked.
+
+**Fix.** Install PacketEvents, or set
+[`auth-mode: offline`](/docs/rlogin/configuration/config-file#auth-mode) if you want
+passwords for everyone.
+
+---
+
+## Nobody can connect: "online-mode is enabled"
+
+The console shows a banner saying rLogin cannot run, and every player is
+refused.
+
+**Cause.** `online-mode` is on while `auth-mode` is `auto` or `offline`. The
+server (or Velocity) rejects every player without a Minecraft account before
+rLogin is consulted, so the accounts those modes exist for can never arrive.
+
+**Fix.** Either set `online-mode=false` — in `server.properties` on a
+standalone server, `velocity.toml` on a proxy — or, if this really is a
+premium-only server, set `auth-mode: online` in rLogin's `config.yml`, which
+makes online-mode the correct setting rather than a contradiction.
+
+See [what online-mode has to
+be](/docs/rlogin/installation#what-online-mode-has-to-be).
+
+---
+
+## Premium players are still asked for a password
+
+<Accordions>
+  <Accordion title="Check the Setup line first">
+    If it says `behind-proxy` but you have no proxy, something in
+    `paper-global.yml` (`proxies.velocity.enabled`) or `spigot.yml`
+    (`settings.bungeecord`) has forwarding enabled. rLogin is trusting a proxy
+    that is not there, so nothing ever verifies the connection.
+  </Accordion>
+  <Accordion title="premium.auto-login is false">
+    Or `auth-mode` is `offline`, which turns Mojang verification off entirely.
+  </Accordion>
+  <Accordion title="Mojang was unreachable">
+    With `api-failure-policy: fail-open` the player is treated as cracked. The
+    console says so. Raise `api-timeout-ms` if your host has slow DNS.
+  </Accordion>
+  <Accordion title="They are on a cracked launcher">
+    The handshake proves ownership of the account. A launcher that cannot
+    complete it is not premium, whatever the name says.
+  </Accordion>
+</Accordions>
+
+---
+
+## A premium player joined and lost everything
+
+They arrived with their **real** UUID, and their old data belongs to the offline
+one — this is `uuid-type: real` working as intended, but it is a surprise the
+first time.
+
+```bash
+/rlogin changeuuid <old-name-or-uuid> <new-uuid>
+```
+
+<Callout type="warn">
+  That moves the rLogin account only: password, 2FA and registration date.
+  Inventory, permissions and economy belong to other plugins and stay where they
+  are — move those with whatever tool those plugins provide.
+</Callout>
+
+To avoid it entirely on an existing offline server, use `uuid-type: cracked`.
+
+---
+
+## Players are asked to log in on every server switch
+
+**Cause.** rLogin is not installed on the proxy itself, so each backend
+decides independently.
+
+**Fix.** Drop the same `rLogin-<version>.jar` into the proxy's `plugins/`, and
+list your auth server in `login-servers.servers`. See
+[Proxy setup](/docs/rlogin/configuration/proxy).
+
+---
+
+## Players reach a server before logging in
+
+**Cause.** `login-servers.enforce` is `false`, so Velocity's own `try` order
+wins and can send them somewhere unprotected.
+
+**Fix.** Set it back to `true` unless you route the first server yourself.
+
+---
+
+## Accounts exist on one server but not another
+
+**Cause.** Each backend has its own SQLite file.
+
+**Fix.** Point them all at the same MySQL database. See
+[Database](/docs/rlogin/configuration/database).
+
+<Callout type="warn">
+  They must also agree on `uuid-type`. If one issues real UUIDs and another
+  offline ones, the same player is two different accounts depending on where
+  they land.
+</Callout>
+
+---
+
+## "Remember me" is not working
+
+| Check | |
+|---|---|
+| Same IP? | Sessions are bound to an address. A mobile network that rotates addresses will not match. |
+| Window expired? | `session.remember-me-minutes`, 30 by default. |
+| Does the account have 2FA? | Those accounts are deliberately excluded. |
+| Did they change their password? | That ends the session immediately. |
+
+---
+
+## Bedrock players are asked to register
+
+**Cause.** `bedrock.prefix` does not match Floodgate's `username-prefix`, so
+rLogin does not recognise the names as Bedrock.
+
+**Fix.** Make them identical, and confirm the startup line says
+`Floodgate: detected`.
+
+---
+
+## Players are disconnected while still typing
+
+`limbo.login-timeout-seconds` is 60 by default. Raise it, or set `0` to disable
+it — but read [why it exists](/docs/rlogin/features/security#login-timeout) first.
+
+---
+
+## A setting I added to config.yml did nothing
+
+Run `/rlogin reload` and watch the console. If the file has a YAML error, the
+reload says so and keeps the previous config rather than starting with none.
+
+<Callout type="info">
+  When you update rLogin, new settings are appended to your existing file
+  automatically and your values are kept. The console lists what was added.
+</Callout>
+
+---
+
+## Reporting a bug
+
+<Card title="GitHub Issues" icon={<Icon name="Github" className="size-4" />} href="https://github.com/pyrelightmc/rlogin/issues">
+  Include the startup line above, your `Setup` value, and the console output
+  with `general.debug: true`.
+</Card>
+
+<Card title="Discord" icon={<DiscordIcon className="size-4" />} href="https://discord.gg/5tuSrNRk3a">
+  Faster for "is this normal?" questions.
+</Card>

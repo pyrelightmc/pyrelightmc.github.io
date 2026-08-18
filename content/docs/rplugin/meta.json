@@ -1,0 +1,9 @@
+{
+  "title": "rPlugin",
+  "description": "In development",
+  "icon": "Hourglass",
+  "root": true,
+  "pages": [
+    "index"
+  ]
+}

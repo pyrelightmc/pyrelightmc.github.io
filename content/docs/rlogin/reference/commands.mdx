@@ -1,0 +1,72 @@
+---
+title: "Commands"
+description: "Every command, its aliases, and what it needs."
+icon: Terminal
+---
+
+## Player commands
+
+| Command | Aliases | Description |
+|---|---|---|
+| `/login <password> [2fa-code]` | `/l` | Log in. The code is only needed if the account has 2FA. |
+| `/register <password> <repeat password>` | `/reg` | Create an account. |
+| `/changepassword <current> <new>` | `/changepass` | Change your password. Ends any active session. |
+| `/logout` | — | Log out and freeze again. |
+| `/2fa <enable\|disable\|confirm> [code]` | — | Manage two-factor authentication. |
+| `/premium` | — | Show your account's premium status. |
+| `/recover <code> <new password>` | — | Spend a one-time code to set a new password and clear 2FA. |
+
+None of these need a permission. `/login`, `/register`, `/2fa` and `/recover`
+are usable while frozen — that is what `limbo.allowed-commands` is for.
+
+## Administration
+
+All of the following require `rlogin.admin` (`op` by default).
+
+| Command | Description |
+|---|---|
+| `/rlogin reload` | Reload `config.yml` and the language files without restarting. |
+| `/rlogin info <player>` | Premium status, UUID, last IP, 2FA state, registration date. |
+| `/rlogin unregister <player>` | Delete an account. |
+| `/rlogin forcelogin <player>` | Log someone in without their password. |
+| `/rlogin changeuuid <from> <to>` | Move an account onto another UUID. Accepts names or UUIDs. |
+| `/rlogin migrate <authme\|nlogin\|jpremium> <path-or-jdbc-url>` | Import from another plugin. |
+| `/rlogin lang` | Reminds you which setting changes the language. |
+
+<Callout type="warn">
+  `changeuuid` moves the **password, 2FA and registration date only**.
+  Inventory, permissions and economy stay behind — they belong to the world and
+  to other plugins.
+</Callout>
+
+## Spawn points
+
+| Command | Description |
+|---|---|
+| `/rlogin spawn set <role>` | Set the spawn for a role to **where you are standing**. |
+| `/rlogin spawn remove <role>` | Clear it. Players are then left where they logged out. |
+| `/rlogin spawn teleport <role>` | Go stand on it. Short form: `tp`. |
+| `/rlogin spawn list` | Show all four. |
+
+`<role>` is one of `join`, `firstjoin`, `login`, `register`. See
+[Spawn points](/docs/rlogin/features/spawns).
+
+## /rlogin as a prefix
+
+Every player command also works under `/rlogin`, which is useful when another
+plugin has claimed the short name:
+
+```bash
+/rlogin login <password>
+/rlogin register <password> <repeat>
+/rlogin changepassword <current> <new>
+/rlogin logout
+/rlogin premium
+```
+
+`/rl` is an alias for `/rlogin`.
+
+## Proxy
+
+rLogin registers no commands on the proxy. Everything is administered on the
+backend, where the accounts are.
