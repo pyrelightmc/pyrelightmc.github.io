@@ -97,25 +97,6 @@ p {
   background-color: rgba(255, 255, 255, 0.06);
 }
 
-/* TOC sidebar item hover styling */
-#nd-toc a,
-#nd-toc button {
-  border-radius: 6px;
-  padding: 4px 8px;
-  margin: 0 -8px;
-  transition: all 0.15s ease;
-}
-
-#nd-toc a:hover,
-#nd-toc button:hover {
-  background-color: rgba(0, 0, 0, 0.05);
-}
-
-.dark #nd-toc a:hover,
-.dark #nd-toc button:hover {
-  background-color: rgba(255, 255, 255, 0.05);
-}
-
 /* Show GitHub info on all screen sizes */
 [class*="nd-notebook-layout"] .gap-6:has(> [class*="GithubInfo"]),
 [class*="nd-docs-layout"] .gap-6:has(> [class*="GithubInfo"]) {

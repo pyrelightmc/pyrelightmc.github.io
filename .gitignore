@@ -5,6 +5,8 @@
 .contentlayer
 .content-collections
 .source
+/public/llms
+/src/lib/page-actions-manifest.json
 
 # test & build
 /coverage

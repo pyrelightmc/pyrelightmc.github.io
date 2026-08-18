@@ -3,6 +3,8 @@
   "version": "0.0.0",
   "private": true,
   "scripts": {
+    "predev": "node scripts/copy-markdown.mjs",
+    "prebuild": "node scripts/copy-markdown.mjs",
     "build": "next build --turbopack",
     "dev": "next dev --turbopack",
     "start": "next start",
