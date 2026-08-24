@@ -16,11 +16,11 @@ export const metadata: Metadata = {
   metadataBase: new URL("https://pyrelightmc.github.io"),
   title: "Pyrelight",
   description:
-    "Pyrelight builds focused Minecraft plugins, starting with rLogin — premium and password authentication for Paper, Folia and Velocity.",
+    "Pyrelight builds focused, open-source Minecraft tools for server networks — authentication, identity, and more.",
   openGraph: {
     title: "Pyrelight",
     description:
-      "Pyrelight builds focused Minecraft plugins, starting with rLogin — premium and password authentication for Paper, Folia and Velocity.",
+      "Pyrelight builds focused, open-source Minecraft tools for server networks — authentication, identity, and more.",
     images: [{ url: "/favicon.png" }],
   },
 };
@@ -111,9 +111,9 @@ const Page = () => {
             </h1>
 
             <p className="text-lg md:text-xl text-white/60 max-w-2xl mb-10 leading-relaxed">
-              Pyrelight builds focused Minecraft plugins for Paper, Folia and
-              Velocity — starting with rLogin: premium and password
-              authentication, one jar, both platforms.
+              Focused, open-source Minecraft tools for Paper, Folia and
+              Velocity — built by a small team that cares about doing things
+              right.
             </p>
 
             <div className="flex flex-col sm:flex-row gap-4 items-center sm:items-start">
@@ -217,11 +217,11 @@ const Page = () => {
         <div className="container mx-auto px-6 py-24 md:py-32">
           <div className="text-center max-w-3xl mx-auto mb-16">
             <h2 className="font-extrabold text-[clamp(2rem,5vw,3.5rem)] leading-[1.1] tracking-[-0.03em] text-white mb-6 font-[family-name:var(--font-display)]">
-              What rLogin actually does
+              Built with care
             </h2>
             <p className="text-white/50 text-lg leading-relaxed">
-              No dashboard, no bloat — every setting is explained in the docs,
-              and every claim here is backed by them.
+              Every tool we ship is focused, well-documented, and
+              designed to just work.
             </p>
           </div>
 
@@ -270,7 +270,7 @@ const Page = () => {
 
             <div>
               <p className="text-sm font-medium text-white/40 mb-6">
-                Switching auth plugins
+                Smooth migrations
               </p>
 
               <h2 className="font-extrabold text-[clamp(2rem,5vw,3.5rem)] leading-[1.1] tracking-[-0.03em] text-white mb-6 font-[family-name:var(--font-display)]">
@@ -279,7 +279,7 @@ const Page = () => {
               </h2>
 
               <p className="text-white/50 text-lg mb-8 leading-relaxed">
-                Moving from another auth plugin? rLogin&apos;s importer reads
+                Switching from another solution? Pyrelight&apos;s importer reads
                 existing accounts in, so nobody is asked to register from
                 scratch.
               </p>
@@ -315,7 +315,7 @@ const Page = () => {
               </h2>
 
               <p className="text-white/50 text-lg mb-8 leading-relaxed">
-                rLogin&apos;s entire codebase is MIT-licensed and public.
+                Pyrelight&apos;s entire codebase is MIT-licensed and public.
                 Audit it, build against its API, or fork it for your own
                 server.
               </p>
@@ -388,8 +388,8 @@ const Page = () => {
               Ready to get started?
             </h2>
             <p className="text-white/50 text-lg mb-10 leading-relaxed">
-              Drop the jar in <code className="text-brand">plugins/</code>,
-              read the docs, and it explains itself from the console up.
+              Browse the docs, pick a tool, and
+              get your server running in minutes.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <PyroButton
@@ -442,7 +442,7 @@ const Page = () => {
                 rel="noopener noreferrer"
                 className="text-white/40 hover:text-brand text-sm transition-colors"
               >
-                Discord
+                Support
               </a>
               <a
                 href="https://github.com/pyrelightmc"

@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { useState, useEffect } from "react";
 import { MagnifyingGlassIcon, BookOpenIcon } from "@heroicons/react/24/solid";
 import { useSearchContext } from "fumadocs-ui/contexts/search";
+import { DiscordIcon } from "@/components/DiscordIcon";
 
 const Logo = () => (
   // eslint-disable-next-line @next/next/no-img-element
@@ -65,6 +66,16 @@ export function Navbar() {
             >
               <BookOpenIcon className="w-4 h-4" />
               <span className="hidden sm:inline">Docs</span>
+            </Link>
+
+            <Link
+              href="https://discord.gg/5tuSrNRk3a"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-white/60 hover:text-white hover:bg-white/5 rounded-lg transition-all"
+            >
+              <DiscordIcon className="w-4 h-4" />
+              <span className="hidden sm:inline">Support</span>
             </Link>
 
             <Link
